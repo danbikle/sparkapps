@@ -8,6 +8,10 @@ It should create a Linear Regression model from the features.
 Demo:
 spark-shell -i linr10.scala
 */
+import org.apache.spark.ml.classification.LogisticRegression
+import org.apache.spark.ml.linalg.{Vector, Vectors}
+import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.sql.Row
 
 // I should get prices:
 import sys.process._
@@ -68,5 +72,20 @@ var sql_str = "SELECT Date, Close, pctlead,slp2,slp3 "
 sql_str=sql_str++" FROM gspc14_table WHERE Date > '2016-09-10' ORDER BY Date"
 val gspc17_df = spark.sql(sql_str)
 
-gspc17_df.collect().map {row => Array(row(0),row(1))}
+gspc17_df.collect().map{row => Array(row(3),row(4))}
+
+gspc17_df.show()
+
+// http://stackoverflow.com/questions/39651170/in-apache-spark-scala-how-to-fill-vectors-dense-in-dataframe-from-csv
+// http://spark.apache.org/docs/latest/ml-pipeline.html
+
+val my_a = gspc17_df.collect().map{row => Seq(row(2),Vectors.dense(row(3).asInstanceOf[Double],row(4).asInstanceOf[Double]))}
+
+
+// FAIL: val my_df = spark.createDataFrame(my_a).todf("yvar","features")
+
+
+
+// FAIL: gspc17_df.select("pctlead",gspc17_df("slp2")).show()
+
 
