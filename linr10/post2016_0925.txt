@@ -1,0 +1,50 @@
+~/sparkapps/linr10/post2016_0925.txt
+
+subject: In Spark-Scala, how to copy Array of Lists into DataFrame?
+
+Hello World,
+
+I am familiar with Python and I am learning Spark-Scala.
+
+I want to build a DataFrame which has structure desribed by this syntax:
+
+// Prepare training data from a list of (label, features) tuples.
+val training = spark.createDataFrame(Seq(
+  (1.1, Vectors.dense(1.1, 0.1)),
+  (0.2, Vectors.dense(1.0, -1.0)),
+  (3.0, Vectors.dense(1.3, 1.0)),
+  (1.0, Vectors.dense(1.2, -0.5))
+)).toDF("label", "features")
+
+I got the above syntax from this URL:
+http://spark.apache.org/docs/latest/ml-pipeline.html
+
+Currently my data is in array which I had pulled out of a DF:
+
+val my_a = gspc17_df.collect().map{row => Seq(row(2),Vectors.dense(row(3).asInstanceOf[Double],row(4).asInstanceOf[Double]))}
+
+The structure of my array is very similar to the above DF:
+
+my_a: Array[Seq[Any]] =
+Array(
+  List(-1.4830674013266898, [-0.004192832940431825,-0.003170667657263393]),
+  List(-0.05876766500768526, [-0.008462913654529357,-0.006880595828929472]),
+  List(1.0109273250546658, [-3.1816797620416693E-4,-0.006502619326182358]))
+
+How to copy data from my array into a DataFrame which has the above structure?
+
+I tried this syntax:
+
+val my_df = spark.createDataFrame(my_a).toDF("label","features")
+
+Spark barked at me:
+
+<console>:105: error: inferred type arguments [Seq[Any]] do not conform to method createDataFrame's type parameter bounds [A <: Product]
+       val my_df = spark.createDataFrame(my_a).toDF("label","features")
+                         ^
+<console>:105: error: type mismatch;
+ found   : scala.collection.mutable.WrappedArray[Seq[Any]]
+ required: Seq[A]
+       val my_df = spark.createDataFrame(my_a).toDF("label","features")
+                                         ^
+scala> 

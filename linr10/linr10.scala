@@ -8,16 +8,17 @@ It should create a Linear Regression model from the features.
 Demo:
 spark-shell -i linr10.scala
 */
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.sql.Row
+// This import is needed to use the $-notation
+import spark.implicits._
 
 // I should get prices:
 import sys.process._
 "/usr/bin/curl -o /tmp/gspc.csv http://ichart.finance.yahoo.com/table.csv?s=%5EGSPC"!
-
-import org.apache.spark.sql.SQLContext
 
 val sqlContext = new SQLContext(sc)
 
@@ -84,8 +85,7 @@ val my_a = gspc17_df.collect().map{row => Seq(row(2),Vectors.dense(row(3).asInst
 
 // FAIL: val my_df = spark.createDataFrame(my_a).todf("yvar","features")
 
-
-
 // FAIL: gspc17_df.select("pctlead",gspc17_df("slp2")).show()
 
-
+gspc17_df.select($"pctlead",$"slp2").show()
+// FAIL: gspc17_df.select(Seq($"pctlead",$"slp2")).show()
