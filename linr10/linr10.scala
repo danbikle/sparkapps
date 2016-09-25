@@ -35,14 +35,19 @@ var sql_str = "SELECT Date, Close, 100.0*(leadp - Close)/Close AS pctlead "
     sql_str=sql_str++" FROM gspc11_table ORDER BY Date"
 
 val gspc12_df = spark.sql(sql_str)
+
 gspc12_df.createOrReplaceTempView("gspc12_table")
-
-var sql_str = "SELECT Date, Close, pctlead,"
-sql_str=sql_str++"AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS mavg2"
+var sql_str = "SELECT Date, Close, pctlead"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS mavg2"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) AS mavg3"
 sql_str=sql_str++" FROM gspc12_table ORDER BY Date"
-/*
-
 val gspc13_df = spark.sql(sql_str)
 
-gspc13_df.head(5)
-*/
+gspc13_df.createOrReplaceTempView("gspc13_table")
+var sql_str = "SELECT Date, Close, pctlead"
+sql_str=sql_str++",(mavg2-LAG(mavg2,1)OVER(ORDER BY Date))/mavg2 AS slp2 "
+sql_str=sql_str++",(mavg3-LAG(mavg3,1)OVER(ORDER BY Date))/mavg3 AS slp3 "
+sql_str=sql_str++" FROM gspc13_table ORDER BY Date"
+val gspc14_df = spark.sql(sql_str)
+
+gspc14_df.head(5)
