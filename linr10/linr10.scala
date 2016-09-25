@@ -50,4 +50,16 @@ sql_str=sql_str++",(mavg3-LAG(mavg3,1)OVER(ORDER BY Date))/mavg3 AS slp3 "
 sql_str=sql_str++" FROM gspc13_table ORDER BY Date"
 val gspc14_df = spark.sql(sql_str)
 
-gspc14_df.head(5)
+// I should get test data:
+gspc14_df.createOrReplaceTempView("gspc14_table")
+var sql_str = "SELECT Date, Close, pctlead,slp2,slp3 "
+sql_str=sql_str++" FROM gspc14_table WHERE Date > '2016-01-01' ORDER BY Date"
+val gspc15_df = spark.sql(sql_str)
+
+// I should get training data:
+gspc15_df.createOrReplaceTempView("gspc15_table")
+var sql_str = "SELECT Date, Close, pctlead,slp2,slp3 "
+sql_str=sql_str++" FROM gspc14_table WHERE Date BETWEEN '1986-01-01' AND '2016-01-01' ORDER BY Date"
+val gspc16_df = spark.sql(sql_str)
+
+gspc16_df.head(5)
