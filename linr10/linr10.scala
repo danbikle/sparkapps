@@ -62,4 +62,11 @@ var sql_str = "SELECT Date, Close, pctlead,slp2,slp3 "
 sql_str=sql_str++" FROM gspc14_table WHERE Date BETWEEN '1986-01-01' AND '2016-01-01' ORDER BY Date"
 val gspc16_df = spark.sql(sql_str)
 
-gspc16_df.head(5)
+// I should get jnk data:
+gspc14_df.createOrReplaceTempView("gspc14_table")
+var sql_str = "SELECT Date, Close, pctlead,slp2,slp3 "
+sql_str=sql_str++" FROM gspc14_table WHERE Date > '2016-09-10' ORDER BY Date"
+val gspc17_df = spark.sql(sql_str)
+
+gspc17_df.collect().map {row => Array(row(0),row(1))}
+
