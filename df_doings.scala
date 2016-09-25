@@ -1,8 +1,12 @@
-/* ~/sparkapps/df_demo10.scala
+/* ~/sparkapps/df_doings.scala
+This script should show some syntax I might want to use.
+ref:
+http://spark.apache.org/docs/latest/sql-programming-guide.html
 
 Demo:
-spark-shell -i df_demo10.scala
+spark-shell -i df_doings.scala
 */
+
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.Row
@@ -13,9 +17,3 @@ case class Person(name: String, age: Int)
 
 val df = Seq((Person("john", 33), 5), (Person("mike", 30), 6)).toDF("person", "id")
 df.show()
-
-/* FAIL:
-import org.apache.spark.sql.functions.udf
-df.withColumn("array", sqlf.udf({ () => Seq(1, 2, 3) }).apply())
-df.show()
-*/
