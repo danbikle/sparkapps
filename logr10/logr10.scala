@@ -70,7 +70,7 @@ val pctlead2label = udf((pctlead:Double)=> {if (pctlead>0.0) 1.0 else 0.0})
 val gspc17_df = gspc14_df.withColumn("label",pctlead2label(col("pctlead")))
 gspc17_df.select("pctlead","label").show
 /*
-I should see this:
+I should see something like this:
 +--------------------+-----+
 |             pctlead|label|
 +--------------------+-----+
@@ -86,3 +86,17 @@ gspc17_df.createOrReplaceTempView("gspc17_table")
 
 // I should copy slp-values into Vectors.dense():
 val fill_vec = udf((slp2:Double,slp3:Double)=> {Vectors.dense(slp2,slp3)} )
+
+val gspc19_df = gspc17_df.withColumn("features",fill_vec(col("slp2"),col("slp3")))
+gspc19_df.select("pctlead","label","features").show
+
+/*
+I should see something like this:
++--------------------+-----+--------------------+
+|             pctlead|label|            features|
++--------------------+-----+--------------------+
+|  1.1404561824729968|  1.0|                null|
+|  0.4747774480712065|  1.0|[0.00566994926887...|
+| 0.29533372711164035|  1.0|[0.00346946867565...|
+|   0.588928150765594|  1.0|[0.00630417651694...|
+*/
