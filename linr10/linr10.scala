@@ -146,3 +146,8 @@ Array
 , [WrappedArray([0.0038324318774239446,0.0029578442407239463])])
 
 */
+
+/* Still under construction...
+It is not clear to me how to proceed from here.
+I will work with logistic regression for awhile because I see a nice demo I can learn from.
+*/
