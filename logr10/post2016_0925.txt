@@ -1,0 +1,71 @@
+~/sparkapps/logr10/post2016_0925.txt
+
+Hello world,
+
+I am new to spark and I want to fit a Logistic Regression model.
+
+I am following in the footsteps I see at this URL:
+
+http://spark.apache.org/docs/latest/ml-pipeline.html#example-estimator-transformer-and-param
+
+I have a DF which looks like this:
+
+scala> train_df
+res72: org.apache.spark.sql.DataFrame = [label: double, features: vector]
+
+scala> train_df.show
++-----+--------------------+
+|label|            features|
++-----+--------------------+
+|  1.0|[-0.0107353760677...|
+|  0.0|[-0.0076811732797...|
+|  0.0|[-0.0089174801367...|
+|  0.0|[-0.0116923306213...|
+|  1.0|[-0.0161697331205...|
+|  1.0|[-0.0115032615713...|
+|  0.0|[-7.6238281426467...|
+|  1.0|[-0.0055192145677...|
+|  0.0|[-3.1823015657084...|
+|  1.0|[-0.0102504367192...|
+|  0.0|[-0.0015747467567...|
+|  1.0|[-0.0111208188358...|
+|  1.0|[-0.0020215104682...|
+|  0.0|[0.00453754567454...|
+|  1.0|[0.00313994238324...|
+|  0.0|[0.00609043431095...|
+|  1.0|[-0.0042287272491...|
+|  1.0|[0.00286623259560...|
+|  0.0|[0.00640420978980...|
+|  0.0|[0.00977485704012...|
++-----+--------------------+
+only showing top 20 rows
+
+scala> 
+
+When I call fit() I see a large error message:
+
+scala> val model1 = lr.fit(train_df)
+16/09/25 23:43:05 ERROR Executor: Exception in task 0.0 in stage 61.0 (TID 1856)
+scala.MatchError: [null,1.0,[0.0038324318774239446,0.0029578442407239463,0.004404746186992112,0.0047446833434552325,0.006408010278740648,0.007583207264524568,0.006851034082985489,0.00771033350877702]] (of class org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema)
+	at org.apache.spark.ml.classification.LogisticRegression$$anonfun$6.apply(LogisticRegression.scala:266)
+	at org.apache.spark.ml.classification.LogisticRegression$$anonfun$6.apply(LogisticRegression.scala:266)
+	at scala.collection.Iterator$$anon$11.next(Iterator.scala:409)
+	at org.apache.spark.storage.memory.MemoryStore.putIteratorAsValues(MemoryStore.scala:214)
+	at org.apache.spark.storage.BlockManager$$anonfun$doPutIterator$1.apply(BlockManager.scala:919)
+	at org.apache.spark.storage.BlockManager$$anonfun$doPutIterator$1.apply(BlockManager.scala:910)
+	at org.apache.spark.storage.BlockManager.doPut(BlockManager.scala:866)
+	at org.apache.spark.storage.BlockManager.doPutIterator(BlockManager.scala:910)
+	at org.apache.spark.storage.BlockManager.getOrElseUpdate(BlockManager.scala:668)
+	at org.apache.spark.rdd.RDD.getOrCompute(RDD.scala:330)
+	at org.apache.spark.rdd.RDD.iterator(RDD.scala:281)
+	at org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:38)
+	at org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:319)
+	at org.apache.spark.rdd.RDD.iterator(RDD.scala:283)
+	at org.apache.spark.scheduler.ResultTask.runTask(ResultTask.scala:70)
+	at org.apache.spark.scheduler.Task.run(Task.scala:85)
+	at org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:274)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+16/09/25 23:43:05 ERROR TaskSetManager: Task 0 in stage 61.0 failed 1 times; aborting job
+org.apache.spark.SparkException: Job aborted due to stage failure: Task 0 in stage 61.0 failed 1 times, most recent failure: Lost task 0.0 in stage 61.0 (TID 1856, localhost): scala.MatchError: [null,1.0,[0.0038324318774239446,0.0029578442407239463,0.004404746186992112,0.0047446833434552325,0.006408010278740648,0.007583207264524568,0.006851034082985489,0.00771033350877702]] (of class org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema)

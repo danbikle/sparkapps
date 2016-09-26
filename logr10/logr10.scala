@@ -142,19 +142,36 @@ println("LogisticRegression parameters:\n" + lr.explainParams() + "\n")
 lr.setMaxIter(10).setRegParam(0.01)
 
 // Learn a LogisticRegression model. This uses the parameters stored in lr.
-val train_df = gspc19_df.filter($"Date" > "2016-01-01").select("label","features")
+val train_df = gspc19_df.filter($"Date" > "2015-01-01").filter($"Date" < "2016-01-01").select("label","features")
 
-val model1 = lr.fit(train_df)
+val model1 = lr.fit(train_df) // Careful of nulls
 
-/* Here I see giant error:
+/* If no nulls, I should see:
 scala> val model1 = lr.fit(train_df)
-16/09/25 23:43:05 ERROR Executor: Exception in task 0.0 in stage 61.0 (TID 1856)
-scala.MatchError: [null,1.0,[0.0038324318774239446,0.0029578442407239463,0.004404746186992112,0.0047446833434552325,0.006408010278740648,0.007583207264524568,0.006851034082985489,0.00771033350877702]] (of class org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema)
+model1: org.apache.spark.ml.classification.LogisticRegressionModel = logreg_279e7642e74a
 */
-
 
 // Since model1 is a Model (i.e., a Transformer produced by an Estimator),
 // we can view the parameters it used during fit().
 // This prints the parameter (name: value) pairs, where names are unique IDs for this
 // LogisticRegression instance.
 println("Model 1 was fit using parameters: " + model1.parent.extractParamMap)
+
+val test_df = gspc19_df.filter($"Date" > "2016-01-01").filter($"Date" < "2016-01-09").select("label","features")
+
+// I should predict:
+model1.transform(test_df).show
+/* I should see something like this:
+
+scala> model1.transform(test_df).show
++-----+--------------------+--------------------+--------------------+----------+
+|label|            features|       rawPrediction|         probability|prediction|
++-----+--------------------+--------------------+--------------------+----------+
+|  1.0|[-0.0107353760677...|[0.06076525537913...|[0.51518664118226...|       0.0|
+|  0.0|[-0.0076811732797...|[-0.2041616087629...|[0.44913615061649...|       1.0|
+|  0.0|[-0.0089174801367...|[-0.3800324094210...|[0.40611908033135...|       1.0|
+|  0.0|[-0.0116923306213...|[-0.6712677665451...|[0.33821302480725...|       1.0|
+|  1.0|[-0.0161697331205...|[-0.7227468185274...|[0.32678840178985...|       1.0|
++-----+--------------------+--------------------+--------------------+----------+
+*/
+
