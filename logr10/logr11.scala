@@ -34,8 +34,40 @@ val gspc11_df = spark.sql(sql_s)
 
 gspc11_df.createOrReplaceTempView("gspc11_table")
 
-var sql_str = "SELECT Date,Close,100*(leadp-Close)/Close pctlead FROM gspc11_table ORDER BY Date"
+var sql_str="SELECT Date,Close,100*(leadp-Close)/Close pctlead FROM gspc11_table ORDER BY Date"
 
 val gspc12_df = spark.sql(sql_str)
 
 gspc12_df.createOrReplaceTempView("gspc12_table")
+
+// I should get moving avg of pctlead looking back 25 years.
+gspc12_df.createOrReplaceTempView("gspc12a_table")
+
+var sql_s="SELECT Date,Close,pctlead,AVG(pctlead)OVER(ORDER BY Date ROWS BETWEEN 25*252 PRECEDING AND CURRENT ROW) avgpctlead FROM gspc12a_table ORDER BY Date"
+
+val gspc12a_df = spark.sql(sql_s)
+// I should have avgpctlead now. I should use it later as a class boundry.
+var sql_str = "SELECT Date, Close, pctlead"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS mavg2"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) AS mavg3"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) AS mavg4"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 5 PRECEDING AND CURRENT ROW) AS mavg5"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS mavg6"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) AS mavg7"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) AS mavg8"
+sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 9 PRECEDING AND CURRENT ROW) AS mavg9"
+sql_str=sql_str++" FROM gspc12_table ORDER BY Date"
+val gspc13_df = spark.sql(sql_str)
+
+gspc13_df.createOrReplaceTempView("gspc13_table")
+var sql_str = "SELECT Date, Close, pctlead"
+sql_str=sql_str++",(mavg2-LAG(mavg2,1)OVER(ORDER BY Date))/mavg2 AS slp2 "
+sql_str=sql_str++",(mavg3-LAG(mavg3,1)OVER(ORDER BY Date))/mavg3 AS slp3 "
+sql_str=sql_str++",(mavg3-LAG(mavg4,1)OVER(ORDER BY Date))/mavg3 AS slp4 "
+sql_str=sql_str++",(mavg3-LAG(mavg5,1)OVER(ORDER BY Date))/mavg3 AS slp5 "
+sql_str=sql_str++",(mavg3-LAG(mavg6,1)OVER(ORDER BY Date))/mavg3 AS slp6 "
+sql_str=sql_str++",(mavg3-LAG(mavg7,1)OVER(ORDER BY Date))/mavg3 AS slp7 "
+sql_str=sql_str++",(mavg3-LAG(mavg8,1)OVER(ORDER BY Date))/mavg3 AS slp8 "
+sql_str=sql_str++",(mavg3-LAG(mavg9,1)OVER(ORDER BY Date))/mavg3 AS slp9 "
+sql_str=sql_str++" FROM gspc13_table ORDER BY Date"
+val gspc14_df = spark.sql(sql_str)
