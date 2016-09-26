@@ -43,10 +43,12 @@ gspc12_df.createOrReplaceTempView("gspc12_table")
 // I should get moving avg of pctlead looking back 25 years.
 gspc12_df.createOrReplaceTempView("gspc12a_table")
 
-var sql_s="SELECT Date,Close,pctlead,AVG(pctlead)OVER(ORDER BY Date ROWS BETWEEN 25*252 PRECEDING AND CURRENT ROW) avgpctlead FROM gspc12a_table ORDER BY Date"
+var sqls="SELECT Date,Close,pctlead,AVG(pctlead)OVER(ORDER BY Date ROWS BETWEEN 25*252 PRECEDING AND CURRENT ROW) avgpctlead FROM gspc12a_table ORDER BY Date"
 
-val gspc12a_df = spark.sql(sql_s)
-// I should have avgpctlead now. I should use it later as a class boundry.
+val gspc12a_df = spark.sql(sqls)
+gspc12a_df.createOrReplaceTempView("gspc12b_table")
+// I should have avgpctlead now(inside gspc12b_table). I should use it later as a class boundry.
+
 var sql_str = "SELECT Date, Close, pctlead"
 sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS mavg2"
 sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) AS mavg3"
@@ -71,3 +73,10 @@ sql_str=sql_str++",(mavg3-LAG(mavg8,1)OVER(ORDER BY Date))/mavg3 AS slp8 "
 sql_str=sql_str++",(mavg3-LAG(mavg9,1)OVER(ORDER BY Date))/mavg3 AS slp9 "
 sql_str=sql_str++" FROM gspc13_table ORDER BY Date"
 val gspc14_df = spark.sql(sql_str)
+
+// I should get the value of avgpctlead for last day of 2015
+var sqls="SELECT avgpctlead FROM gspc12b_table WHERE Date=(SELECT MAX(Date)FROM gspc12b_table WHERE Date<'2016-01-01')"
+val gspc12b_df = spark.sql(sqls)
+
+// I should compute label from pctlead:
+val pctlead2label = udf((pctlead:Double)=> {if (pctlead>0.0) 1.0 else 0.0}) 
