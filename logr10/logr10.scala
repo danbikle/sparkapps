@@ -64,11 +64,13 @@ sql_str=sql_str++",(mavg3-LAG(mavg9,1)OVER(ORDER BY Date))/mavg3 AS slp9 "
 sql_str=sql_str++" FROM gspc13_table ORDER BY Date"
 val gspc14_df = spark.sql(sql_str)
 
-// I should compute label from pctlead:
+
 gspc14_df.createOrReplaceTempView("gspc14_table")
 var sql_str = "SELECT Date,Close,pctlead,slp2,slp3,slp4,slp5,slp6,slp7,slp8,slp9"
 sql_str=sql_str++" FROM gspc14_table ORDER BY Date                              "
 val gspc15_df = spark.sql(sql_str)
+// I should compute label from pctlead:
+val pctlead2label = udf((pctlead:Double)=> {1.0}) 
 
-val gspc17_df = gspc15_df.withColumn("label",col("pctlead"))
-gspc17_df.show
+val gspc17_df = gspc15_df.withColumn("label",pctlead2label(col("pctlead")))
+gspc17_df.select("pctlead","label").show
