@@ -131,3 +131,30 @@ I should see something like this:
 |  0.0|[2.0,1.0,-1.0]|
 +-----+--------------+
 */
+
+
+// Create a LogisticRegression instance. This instance is an Estimator.
+val lr = new LogisticRegression()
+
+println("LogisticRegression parameters:\n" + lr.explainParams() + "\n")
+
+// We may set parameters using setter methods.
+lr.setMaxIter(10).setRegParam(0.01)
+
+// Learn a LogisticRegression model. This uses the parameters stored in lr.
+val train_df = gspc19_df.filter($"Date" > "2016-01-01").select("label","features")
+
+val model1 = lr.fit(train_df)
+
+/* Here I see giant error:
+scala> val model1 = lr.fit(train_df)
+16/09/25 23:43:05 ERROR Executor: Exception in task 0.0 in stage 61.0 (TID 1856)
+scala.MatchError: [null,1.0,[0.0038324318774239446,0.0029578442407239463,0.004404746186992112,0.0047446833434552325,0.006408010278740648,0.007583207264524568,0.006851034082985489,0.00771033350877702]] (of class org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema)
+*/
+
+
+// Since model1 is a Model (i.e., a Transformer produced by an Estimator),
+// we can view the parameters it used during fit().
+// This prints the parameter (name: value) pairs, where names are unique IDs for this
+// LogisticRegression instance.
+println("Model 1 was fit using parameters: " + model1.parent.extractParamMap)
