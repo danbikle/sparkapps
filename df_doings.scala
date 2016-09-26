@@ -42,3 +42,16 @@ gspc10_df.filter($"Date" > "2016-09-22").collect().map{ row => row(0) }
 gspc10_df.filter($"Date" > "2016-09-22").collect().map{ row => (row(0),row(1)) }
 gspc10_df.filter($"Date" > "2016-09-22").collect().map{ row => Array(row(0),row(1)) }
 
+// Array doings
+val my_a = gspc10_df.filter($"Date" > "2016-09-01").collect().map{ row => row(0) }
+// In scala how to slice last element of array?
+val last_a = my_a.slice(my_a.length-1,my_a.length)
+val last_elm = my_a(my_a.length-1)
+
+// Useful:
+my_a.dropRight(1)
+// Fail: my_a.dropLeft(1)
+my_a.drop(1) // Not dropLeft()
+
+// Take first 3:
+my_a.take(3)
