@@ -87,7 +87,7 @@ val pctlead2label = udf((pctlead:Float)=> {if (pctlead>class_boundry) 1.0 else 0
 // I should add the label to my DF of observations:
 val gspc17_df = gspc14_df.withColumn("label",pctlead2label(col("pctlead")))
 
-gspc17_df.createOrReplaceTempView("gspc17_table")
+// NOT NEEDED ? gspc17_df.createOrReplaceTempView("gspc17_table")
 
 // I should copy slp-values into Vectors.dense():
 
@@ -115,3 +115,27 @@ val test_df = gspc19_df.filter($"Date" > "2016-01-01").filter($"Date" < "2017-01
 
 /* I should predict. It is convenient that predictions_df will contain a copy of test_df.*/
 val predictions_df = model1.transform(test_df)
+
+// I should report.
+predictions_df.createOrReplaceTempView("predictions_table")
+
+// Long-only effectiveness:
+spark.sql("SELECT SUM(pctlead) eff_lo FROM predictions_table").show
+
+// Effectiveness of negative predictions:
+spark.sql("SELECT -SUM(pctlead) eff_np FROM predictions_table WHERE prediction = 0.0").show
+
+// Effectiveness of positive predictions:
+spark.sql("SELECT SUM(pctlead) eff_pp FROM predictions_table WHERE prediction = 1.0").show
+
+// True Positive Count:
+spark.sql("SELECT COUNT(Date) tpc FROM predictions_table WHERE prediction=1.0 AND pctlead>0").show
+
+// True Negative Count:
+spark.sql("SELECT COUNT(Date) tnc FROM predictions_table WHERE prediction=0.0 AND pctlead<0").show
+
+// False Positive Count:
+spark.sql("SELECT COUNT(Date) fpc FROM predictions_table WHERE prediction=1.0 AND pctlead<0").show
+
+// False Negative Count:
+spark.sql("SELECT COUNT(Date) fnc FROM predictions_table WHERE prediction=0.0 AND pctlead>0").show
