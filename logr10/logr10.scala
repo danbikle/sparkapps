@@ -64,13 +64,25 @@ sql_str=sql_str++",(mavg3-LAG(mavg9,1)OVER(ORDER BY Date))/mavg3 AS slp9 "
 sql_str=sql_str++" FROM gspc13_table ORDER BY Date"
 val gspc14_df = spark.sql(sql_str)
 
-
-gspc14_df.createOrReplaceTempView("gspc14_table")
-var sql_str = "SELECT Date,Close,pctlead,slp2,slp3,slp4,slp5,slp6,slp7,slp8,slp9"
-sql_str=sql_str++" FROM gspc14_table ORDER BY Date                              "
-val gspc15_df = spark.sql(sql_str)
 // I should compute label from pctlead:
-val pctlead2label = udf((pctlead:Double)=> {1.0}) 
+val pctlead2label = udf((pctlead:Double)=> {if (pctlead>0.0) 1.0 else 0.0}) 
 
-val gspc17_df = gspc15_df.withColumn("label",pctlead2label(col("pctlead")))
+val gspc17_df = gspc14_df.withColumn("label",pctlead2label(col("pctlead")))
 gspc17_df.select("pctlead","label").show
+/*
+I should see this:
++--------------------+-----+
+|             pctlead|label|
++--------------------+-----+
+|  1.1404561824729968|  1.0|
+|  0.4747774480712065|  1.0|
+| 0.29533372711164035|  1.0|
+|   0.588928150765594|  1.0|
+| -0.2927341920374689|  0.0|
+|  0.3523135436104863|  1.0|
+*/
+
+gspc17_df.createOrReplaceTempView("gspc17_table")
+
+// I should copy slp-values into Vectors.dense():
+val fill_vec = udf((slp2:Double,slp3:Double)=> {Vectors.dense(slp2,slp3)} )
