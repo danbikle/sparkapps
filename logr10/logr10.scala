@@ -100,3 +100,19 @@ I should see something like this:
 | 0.29533372711164035|  1.0|[0.00346946867565...|
 |   0.588928150765594|  1.0|[0.00630417651694...|
 */
+
+/* I should mimic this structure.
+ref:
+http://spark.apache.org/docs/latest/ml-pipeline.html#example-estimator-transformer-and-param
+*/
+val my_df = spark.createDataFrame(Seq((1.0, Vectors.dense(0.0, 1.1, 0.1)),(0.0, Vectors.dense(2.0, 1.0, -1.0)))).toDF("label", "features")
+my_df.show
+/*
+I should see something like this:
++-----+--------------+
+|label|      features|
++-----+--------------+
+|  1.0| [0.0,1.1,0.1]|
+|  0.0|[2.0,1.0,-1.0]|
++-----+--------------+
+*/
