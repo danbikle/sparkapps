@@ -85,9 +85,9 @@ I should see something like this:
 gspc17_df.createOrReplaceTempView("gspc17_table")
 
 // I should copy slp-values into Vectors.dense():
-val fill_vec = udf((slp2:Double,slp3:Double)=> {Vectors.dense(slp2,slp3)} )
+val fill_vec = udf((slp2:Double,slp3:Double,slp4:Double,slp5:Double,slp6:Double,slp7:Double,slp8:Double,slp9:Double)=> {Vectors.dense(slp2,slp3,slp4,slp5,slp6,slp7,slp8,slp9)})
 
-val gspc19_df = gspc17_df.withColumn("features",fill_vec(col("slp2"),col("slp3")))
+val gspc19_df = gspc17_df.withColumn("features",fill_vec(col("slp2"),col("slp3"),col("slp4"),col("slp5"),col("slp6"),col("slp7"),col("slp8"),col("slp9")))
 gspc19_df.select("pctlead","label","features").show
 
 /*
@@ -99,6 +99,21 @@ I should see something like this:
 |  0.4747774480712065|  1.0|[0.00566994926887...|
 | 0.29533372711164035|  1.0|[0.00346946867565...|
 |   0.588928150765594|  1.0|[0.00630417651694...|
+*/
+
+// features are hard to see. This should help:
+gspc19_df.select("features").collect().map{r =>r}.slice(0,2)
+/*
+I should see something like this:
+res66: Array[org.apache.spark.sql.Row] = Array([null], [
+[0.005669949268875106
+,0.005669949268875106
+,0.005669949268875106
+,0.005669949268875106
+,0.005669949268875106
+,0.005669949268875106
+,0.005669949268875106
+,0.005669949268875106]])
 */
 
 /* I should mimic this structure.
