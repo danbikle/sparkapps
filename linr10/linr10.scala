@@ -73,19 +73,23 @@ var sql_str = "SELECT Date, Close, pctlead,slp2,slp3 "
 sql_str=sql_str++" FROM gspc14_table WHERE Date > '2016-09-10' ORDER BY Date"
 val gspc17_df = spark.sql(sql_str)
 
-gspc17_df.collect().map{row => Array(row(3),row(4))}
-
-gspc17_df.show()
-
 // http://stackoverflow.com/questions/39651170/in-apache-spark-scala-how-to-fill-vectors-dense-in-dataframe-from-csv
 // http://spark.apache.org/docs/latest/ml-pipeline.html
 
-val my_a = gspc17_df.collect().map{row => Seq(row(2),Vectors.dense(row(3).asInstanceOf[Double],row(4).asInstanceOf[Double]))}
+gspc17_df.show
 
+val gspc18_df = gspc17_df.select("pctlead","slp2","slp3").withColumn("yval", col("pctlead"))
 
-// FAIL: val my_df = spark.createDataFrame(my_a).todf("yvar","features")
-
-// FAIL: gspc17_df.select("pctlead",gspc17_df("slp2")).show()
-
-gspc17_df.select($"pctlead",$"slp2").show()
-// FAIL: gspc17_df.select(Seq($"pctlead",$"slp2")).show()
+gspc18_df.show
+/*
+scala> gspc18_df.show
++--------------------+--------------------+--------------------+--------------------+
+|             pctlead|                slp2|                slp3|                yval|
++--------------------+--------------------+--------------------+--------------------+
+| -1.4830674013266898|-0.00419283294043...|-0.00317066765726...| -1.4830674013266898|
+|-0.05876766500768526|-0.00846291365452...|-0.00688059582892...|-0.05876766500768526|
+|  1.0109273250546658|-3.18167976204166...|-0.00650261932618...|  1.0109273250546658|
+| -0.5736774814255415|0.005873373804173195|0.004411094700847...| -0.5736774814255415|
+|                null|0.003832431877423...|0.002957844240723...|                null|
++--------------------+--------------------+--------------------+--------------------+
+*/
