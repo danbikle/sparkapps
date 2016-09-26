@@ -43,7 +43,7 @@ gspc12_df.createOrReplaceTempView("gspc12_table")
 // I should get moving avg of pctlead looking back 25 years.
 gspc12_df.createOrReplaceTempView("gspc12a_table")
 
-var sqls="SELECT Date,Close,pctlead,AVG(pctlead)OVER(ORDER BY Date ROWS BETWEEN 25*252 PRECEDING AND CURRENT ROW) avgpctlead FROM gspc12a_table ORDER BY Date"
+var sqls="SELECT Date,Close,pctlead,AVG(pctlead)OVER(ORDER BY Date ROWS BETWEEN 25*252 PRECEDING AND CURRENT ROW)avgpctlead FROM gspc12a_table ORDER BY Date"
 
 val gspc12a_df = spark.sql(sqls)
 gspc12a_df.createOrReplaceTempView("gspc12b_table")
@@ -75,9 +75,43 @@ sql_str=sql_str++" FROM gspc13_table ORDER BY Date"
 val gspc14_df = spark.sql(sql_str)
 
 // I should get the value of avgpctlead for last day of 2015
+
 var sqls="SELECT avgpctlead FROM gspc12b_table WHERE Date=(SELECT MAX(Date)FROM gspc12b_table WHERE Date<'2016-01-01')"
+
 val gspc12b_df    = spark.sql(sqls)
 val class_boundry = gspc12b_df.first()(0).asInstanceOf[Double] // Should be near 0.035
 
 // I should compute label from pctlead:
-val pctlead2label = udf((pctlead:Double)=> {if (pctlead>class_boundry) 1.0 else 0.0}) 
+val pctlead2label = udf((pctlead:Float)=> {if (pctlead>class_boundry) 1.0 else 0.0}) 
+
+// I should add the label to my DF of observations:
+val gspc17_df = gspc14_df.withColumn("label",pctlead2label(col("pctlead")))
+
+gspc17_df.createOrReplaceTempView("gspc17_table")
+
+// I should copy slp-values into Vectors.dense():
+
+val fill_vec = udf((slp2:Float,slp3:Float,slp4:Float,slp5:Float,slp6:Float,slp7:Float,slp8:Float,slp9:Float)=> {Vectors.dense(slp2,slp3,slp4,slp5,slp6,slp7,slp8,slp9)})
+
+// I should see if I can replace Doubles with Floats
+
+val gspc19_df = gspc17_df.withColumn("features",fill_vec(col("slp2"),col("slp3"),col("slp4"),col("slp5"),col("slp6"),col("slp7"),col("slp8"),col("slp9")))
+
+// I should create a LogisticRegression instance. This instance is an 'Estimator'.
+val lr = new LogisticRegression()
+
+lr.setMaxIter(1234).setRegParam(0.01)
+
+// I should gather observations to learn from:
+
+val train_df = gspc19_df.filter($"Date" > "1986-01-01").filter($"Date" < "2016-01-01").select("label","features")
+
+/*I should fit a LogisticRegression model to observations.
+This uses the parameters stored in lr.*/
+val model1 = lr.fit(train_df)
+// Above line will fail with ugly error if train_df has any nulls.
+
+val test_df = gspc19_df.filter($"Date" > "2016-01-01").filter($"Date" < "2017-01-01")
+
+/* I should predict. It is convenient that predictions_df will contain a copy of test_df.*/
+val predictions_df = model1.transform(test_df)
