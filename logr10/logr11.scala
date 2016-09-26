@@ -76,7 +76,8 @@ val gspc14_df = spark.sql(sql_str)
 
 // I should get the value of avgpctlead for last day of 2015
 var sqls="SELECT avgpctlead FROM gspc12b_table WHERE Date=(SELECT MAX(Date)FROM gspc12b_table WHERE Date<'2016-01-01')"
-val gspc12b_df = spark.sql(sqls)
+val gspc12b_df    = spark.sql(sqls)
+val class_boundry = gspc12b_df.first()(0).asInstanceOf[Double] // Should be near 0.035
 
 // I should compute label from pctlead:
-val pctlead2label = udf((pctlead:Double)=> {if (pctlead>0.0) 1.0 else 0.0}) 
+val pctlead2label = udf((pctlead:Double)=> {if (pctlead>class_boundry) 1.0 else 0.0}) 
