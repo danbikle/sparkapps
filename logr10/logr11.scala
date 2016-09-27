@@ -40,11 +40,6 @@ val gspc12_df = spark.sql(sql_str)
 
 gspc12_df.createOrReplaceTempView("gspc12_table")
 
-// I should get moving avg of pctlead looking back 25 years.
-gspc12_df.createOrReplaceTempView("gspc12a_table")
-
-var sqls="SELECT Date,Close,pctlead,AVG(pctlead)OVER(ORDER BY Date ROWS BETWEEN 25*252 PRECEDING AND CURRENT ROW)avgpctlead FROM gspc12a_table ORDER BY Date"
-
 val gspc12a_df = spark.sql(sqls)
 gspc12a_df.createOrReplaceTempView("gspc12b_table")
 // I should have avgpctlead now(inside gspc12b_table). I should use it later as a class boundry.
@@ -74,26 +69,31 @@ sql_str=sql_str++",(mavg3-LAG(mavg9,1)OVER(ORDER BY Date))/mavg3 AS slp9 "
 sql_str=sql_str++" FROM gspc13_table ORDER BY Date"
 val gspc14_df = spark.sql(sql_str)
 
+// I should get moving avg of pctlead looking back 25 years.
+val date_pctlead_df = gspc12_df.select("Date","pctlead")
+date_pctlead_df.createOrReplaceTempView("date_pctlead_table")
+
+var sqls="SELECT Date,AVG(pctlead)OVER(ORDER BY Date ROWS BETWEEN 25*252 PRECEDING AND CURRENT ROW)avgpctlead FROM date_pctlead_table ORDER BY Date"
+
+val avgpctlead_df = spark.sql(sqls)
+avgpctlead_df.createOrReplaceTempView("avgpctlead_table")
+
 // I should get the value of avgpctlead for last day of 2015
 
-var sqls="SELECT avgpctlead FROM gspc12b_table WHERE Date=(SELECT MAX(Date)FROM gspc12b_table WHERE Date<'2016-01-01')"
+var sqls="SELECT avgpctlead FROM avgpctlead_table WHERE Date=(SELECT MAX(Date)FROM avgpctlead_table WHERE Date<'2016-01-01')"
 
-val gspc12b_df    = spark.sql(sqls)
-val class_boundry = gspc12b_df.first()(0).asInstanceOf[Double] // Should be near 0.035
+val class_boundry_df = spark.sql(sqls)
+val class_boundry_d  = class_boundry_df.first()(0).asInstanceOf[Double] // Should be near 0.035
 
 // I should compute label from pctlead:
-val pctlead2label = udf((pctlead:Float)=> {if (pctlead>class_boundry) 1.0 else 0.0}) 
+val pctlead2label = udf((pctlead:Float)=> {if (pctlead> class_boundry_d) 1.0 else 0.0}) 
 
 // I should add the label to my DF of observations:
 val gspc17_df = gspc14_df.withColumn("label",pctlead2label(col("pctlead")))
 
-// NOT NEEDED ? gspc17_df.createOrReplaceTempView("gspc17_table")
-
 // I should copy slp-values into Vectors.dense():
 
 val fill_vec = udf((slp2:Float,slp3:Float,slp4:Float,slp5:Float,slp6:Float,slp7:Float,slp8:Float,slp9:Float)=> {Vectors.dense(slp2,slp3,slp4,slp5,slp6,slp7,slp8,slp9)})
-
-// I should see if I can replace Doubles with Floats
 
 val gspc19_df = gspc17_df.withColumn("features",fill_vec(col("slp2"),col("slp3"),col("slp4"),col("slp5"),col("slp6"),col("slp7"),col("slp8"),col("slp9")))
 
@@ -104,14 +104,17 @@ lr.setMaxIter(1234).setRegParam(0.01)
 
 // I should gather observations to learn from:
 
-val train_df = gspc19_df.filter($"Date" > "1986-01-01").filter($"Date" < "2016-01-01").select("label","features")
+// val train_df = gspc19_df.filter($"Date" > "1986-01-01").filter($"Date" < "2016-01-01")
+gspc19_df.createOrReplaceTempView("gspc19_table")
+val train_df = spark.sql("SELECT * FROM gspc19_table WHERE Date BETWEEN'1986-01-01'AND'2016-01-01'")
 
 /*I should fit a LogisticRegression model to observations.
 This uses the parameters stored in lr.*/
 val model1 = lr.fit(train_df)
 // Above line will fail with ugly error if train_df has any nulls.
 
-val test_df = gspc19_df.filter($"Date" > "2016-01-01").filter($"Date" < "2017-01-01")
+// val test_df = gspc19_df.filter($"Date" > "2016-01-01").filter($"Date" < "2017-01-01")
+val test_df = spark.sql("SELECT * FROM gspc19_table WHERE Date BETWEEN'2016-01-01'AND'2017-01-01'")
 
 /* I should predict. It is convenient that predictions_df will contain a copy of test_df.*/
 val predictions_df = model1.transform(test_df)
