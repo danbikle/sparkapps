@@ -25,6 +25,9 @@ val sqlContext = new SQLContext(sc)
 
 val gspc10_df = sqlContext.read.format("com.databricks.spark.csv").option("header","true").option("inferSchema","true").load("/tmp/gspc.csv")
 
+// This method makes it easy to create a table named tab from a DF:
+def df2table(df:org.apache.spark.sql.DataFrame) = df.createOrReplaceTempView("tab")
+
 // I should Register the DataFrame as a SQL temporary view
 gspc10_df.createOrReplaceTempView("gspc10_table")
 
