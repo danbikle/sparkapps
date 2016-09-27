@@ -77,7 +77,7 @@ val class_boundry = class_df.first()(0).asInstanceOf[Double]
 
 
 // I should compute label from pctlead:
-val pctlead2label = udf((pctlead:Float)=> {if (pctlead> class_boundry_d) 1.0 else 0.0}) 
+val pctlead2label = udf((pctlead:Float)=> {if (pctlead> class_boundry) 1.0 else 0.0}) 
 
 // I should add the label to my DF of observations:
 val dp15df = dp14df.withColumn("label",pctlead2label(col("pctlead")))
@@ -88,4 +88,15 @@ val fill_vec = udf((slp2:Float,slp3:Float,slp4:Float,slp5:Float,slp6:Float,slp7:
 
 val dp16df = dp15df.withColumn("features",fill_vec(col("slp2"),col("slp3"),col("slp4"),col("slp5"),col("slp6"),col("slp7"),col("slp8"),col("slp9")))
 
-dp16df.show
+// I should create a LogisticRegression instance. This instance is an 'Estimator'.
+val lr = new LogisticRegression()
+
+lr.setMaxIter(1234).setRegParam(0.01)
+
+// I should gather observations to learn from:
+dp16df.createOrReplaceTempView("tab")
+
+val train_df = spark.sql("SELECT * FROM tab"++training_period)
+train_df.show
+
+
