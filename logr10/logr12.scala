@@ -1,10 +1,10 @@
 /* ~/sparkapps/logr10/logr12.scala
-This script should download some data.
+This script should download prices and predict daily direction of GSPC.
 It should generate a label which I assume to be dependent on price calculations.
 A label should classify an observation as down or up. Down is 0.0, up is 1.0.
 It should generate independent features from slopes of moving averages of prices.
 It should create a Logistic Regression model from many years of features.
-This script is a less-verbose enhancement of logr10.scala.
+This script is a less-verbose enhancement of logr11.scala.
 Demo:
 spark-shell -i logr12.scala
 */
@@ -15,7 +15,6 @@ import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.functions._
-
 
 // I should get prices:
 import sys.process._
@@ -75,11 +74,12 @@ val class_df = spark.sql(sqls)
 
 val class_boundry = class_df.first()(0).asInstanceOf[Double]
 
-
 // I should compute label from pctlead:
+
 val pctlead2label = udf((pctlead:Float)=> {if (pctlead> class_boundry) 1.0 else 0.0}) 
 
 // I should add the label to my DF of observations:
+
 val dp15df = dp14df.withColumn("label",pctlead2label(col("pctlead")))
 
 // I should copy slp-values into Vectors.dense():
@@ -89,6 +89,7 @@ val fill_vec = udf((slp2:Float,slp3:Float,slp4:Float,slp5:Float,slp6:Float,slp7:
 val dp16df = dp15df.withColumn("features",fill_vec(col("slp2"),col("slp3"),col("slp4"),col("slp5"),col("slp6"),col("slp7"),col("slp8"),col("slp9")))
 
 // I should create a LogisticRegression instance. This instance is an 'Estimator'.
+
 val lr = new LogisticRegression()
 
 lr.setMaxIter(1234).setRegParam(0.01)
@@ -97,6 +98,40 @@ lr.setMaxIter(1234).setRegParam(0.01)
 dp16df.createOrReplaceTempView("tab")
 
 val train_df = spark.sql("SELECT * FROM tab"++training_period)
-train_df.show
 
+/*I should fit a LogisticRegression model to observations.
+This uses the parameters stored in lr.*/
+val model1 = lr.fit(train_df)
+// Above line will fail with ugly error if train_df has any nulls.
 
+val test_period = " WHERE Date BETWEEN'2016-01-01'AND'2017-01-01' "
+val test_df = spark.sql("SELECT * FROM tab"++test_period)
+
+/* I should predict. It is convenient that predictions_df will contain a copy of test_df.*/
+
+val predictions_df = model1.transform(test_df)
+predictions_df.createOrReplaceTempView("tab")
+
+// Long-only effectiveness:
+spark.sql("SELECT SUM(pctlead) eff_lo FROM tab").show
+
+// Effectiveness of negative predictions:
+spark.sql("SELECT -SUM(pctlead) eff_np FROM tab WHERE prediction = 0.0").show
+
+// Effectiveness of positive predictions:
+spark.sql("SELECT SUM(pctlead) eff_pp FROM tab WHERE prediction = 1.0").show
+
+// True Positive Count:
+spark.sql("SELECT COUNT(Date) tpc FROM tab WHERE prediction=1.0 AND pctlead>0").show
+
+// True Negative Count:
+spark.sql("SELECT COUNT(Date) tnc FROM tab WHERE prediction=0.0 AND pctlead<0").show
+
+// False Positive Count:
+spark.sql("SELECT COUNT(Date) fpc FROM tab WHERE prediction=1.0 AND pctlead<0").show
+
+// False Negative Count:
+spark.sql("SELECT COUNT(Date) fnc FROM tab WHERE prediction=0.0 AND pctlead>0").show
+
+// prediction report:
+predictions_df.select("Date","Close","pctlead","prediction").show
