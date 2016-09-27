@@ -134,4 +134,10 @@ spark.sql("SELECT COUNT(Date) fpc FROM tab WHERE prediction=1.0 AND pctlead<0").
 spark.sql("SELECT COUNT(Date) fnc FROM tab WHERE prediction=0.0 AND pctlead>0").show
 
 // prediction report:
-predictions_df.select("Date","Close","pctlead","prediction").show
+// predictions_df.select("Date","Close","pctlead","label","prediction").show(255)
+
+// eff logic
+val eff = udf((pctlead:Float,prediction:Double)=> {if (prediction==1.0) pctlead else -pctlead})
+
+val p2df = predictions_df.withColumn("effectiveness",eff(col("pctlead"),col("prediction")))
+p2df.select("Date","Close","pctlead","effectiveness","label","prediction").show(255)
