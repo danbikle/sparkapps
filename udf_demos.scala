@@ -19,3 +19,32 @@ val change_label = udf((label:Float)=> {if (label==1.0) 0.0 else 1.0})
 
 val x2df = x1df.withColumn("new_label",change_label(col("label")))
 
+x2df.show
+/*
++-----+--------------+---------+
+|label|      features|new_label|
++-----+--------------+---------+
+|  1.0| [0.0,1.1,0.1]|      0.0|
+|  0.0|[2.0,1.0,-1.0]|      1.0|
+|  0.0| [2.0,1.3,1.0]|      1.0|
+|  1.0|[0.0,1.2,-0.5]|      0.0|
++-----+--------------+---------+
+*/
+
+val coder2: (Float  => String) = (arg: Float)  => {if (arg == 1.0) "positive" else "negative"}
+
+val posneg = udf((arg:Float) => {coder2(arg)})
+
+val x2df = x1df.withColumn("string_label",posneg(col("label")))
+
+x2df.show
+/*
++-----+--------------+------------+
+|label|      features|string_label|
++-----+--------------+------------+
+|  1.0| [0.0,1.1,0.1]|    positive|
+|  0.0|[2.0,1.0,-1.0]|    negative|
+|  0.0| [2.0,1.3,1.0]|    negative|
+|  1.0|[0.0,1.2,-0.5]|    positive|
++-----+--------------+------------+
+*/
