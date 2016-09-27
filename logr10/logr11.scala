@@ -26,7 +26,14 @@ val sqlContext = new SQLContext(sc)
 val gspc10_df = sqlContext.read.format("com.databricks.spark.csv").option("header","true").option("inferSchema","true").load("/tmp/gspc.csv")
 
 // This method makes it easy to create a table named tab from a DF:
-def df2table(df:org.apache.spark.sql.DataFrame) = df.createOrReplaceTempView("tab")
+def df2tab(df:org.apache.spark.sql.DataFrame) = df.createOrReplaceTempView("tab")
+
+/* This method makes it easy to run SQL against a DF.
+Demo: dfsql(gspc10_df,"SELECT MIN(Date),MAX(Date),MIN(Close),MAX(Close)FROM tab").show
+*/
+def dfsql(df:org.apache.spark.sql.DataFrame, sql:String): org.apache.spark.sql.DataFrame = {df2tab(df);spark.sql(sql)}
+// It works?
+dfsql(gspc10_df,"SELECT MIN(Date),MAX(Date),MIN(Close),MAX(Close)FROM tab").show
 
 // I should Register the DataFrame as a SQL temporary view
 gspc10_df.createOrReplaceTempView("gspc10_table")
