@@ -40,10 +40,6 @@ val gspc12_df = spark.sql(sql_str)
 
 gspc12_df.createOrReplaceTempView("gspc12_table")
 
-val gspc12a_df = spark.sql(sqls)
-gspc12a_df.createOrReplaceTempView("gspc12b_table")
-// I should have avgpctlead now(inside gspc12b_table). I should use it later as a class boundry.
-
 var sql_str = "SELECT Date, Close, pctlead"
 sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS mavg2"
 sql_str=sql_str++",AVG(Close)OVER(ORDER BY Date ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) AS mavg3"
@@ -104,8 +100,8 @@ lr.setMaxIter(1234).setRegParam(0.01)
 
 // I should gather observations to learn from:
 
-// val train_df = gspc19_df.filter($"Date" > "1986-01-01").filter($"Date" < "2016-01-01")
 gspc19_df.createOrReplaceTempView("gspc19_table")
+
 val train_df = spark.sql("SELECT * FROM gspc19_table WHERE Date BETWEEN'1986-01-01'AND'2016-01-01'")
 
 /*I should fit a LogisticRegression model to observations.
@@ -113,7 +109,6 @@ This uses the parameters stored in lr.*/
 val model1 = lr.fit(train_df)
 // Above line will fail with ugly error if train_df has any nulls.
 
-// val test_df = gspc19_df.filter($"Date" > "2016-01-01").filter($"Date" < "2017-01-01")
 val test_df = spark.sql("SELECT * FROM gspc19_table WHERE Date BETWEEN'2016-01-01'AND'2017-01-01'")
 
 /* I should predict. It is convenient that predictions_df will contain a copy of test_df.*/
