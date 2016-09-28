@@ -4,7 +4,6 @@ It should generate a label which I assume to be dependent on price calculations.
 A label should classify an observation as down or up. Down is 0.0, up is 1.0.
 It should generate independent features from slopes of moving averages of prices.
 It should create a Logistic Regression model from many years of features.
-This script is a less-verbose enhancement of logr11.scala.
 Demo:
 spark-shell -i logr12.scala
 */
